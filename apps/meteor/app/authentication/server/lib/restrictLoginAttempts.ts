@@ -2,6 +2,7 @@ import type { IServerEvent } from '@rocket.chat/core-typings';
 import { ServerEventType } from '@rocket.chat/core-typings';
 import { Logger } from '@rocket.chat/logger';
 import { Rooms, ServerEvents, Users } from '@rocket.chat/models';
+import ipRangeCheck from 'ip-range-check';
 
 import { addMinutesToADate } from '../../../../lib/utils/addMinutesToADate';
 import { getClientAddress } from '../../../../server/lib/getClientAddress';
@@ -48,14 +49,14 @@ const notifyFailedLogin = async (ipOrUsername: string, blockedUntil: Date, faile
 
 export const isValidLoginAttemptByIp = async (ip: string): Promise<boolean> => {
 	const whitelist = String(settings.get('Block_Multiple_Failed_Logins_Ip_Whitelist'))
-		.split(',')
+		.split(/[\s,]+/)
 		.map((ip) => ip.trim())
 		.filter(Boolean);
 
 	if (
 		!settings.get('Block_Multiple_Failed_Logins_Enabled') ||
 		!settings.get('Block_Multiple_Failed_Logins_By_Ip') ||
-		whitelist.includes(ip)
+		ipRangeCheck(ip, whitelist)
 	) {
 		return true;
 	}
